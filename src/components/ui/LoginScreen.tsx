@@ -4,6 +4,7 @@ import { useAppContext } from '../../context/AppContext';
 import { BotanicalBg } from './BotanicalBg';
 import { GerberaFlower } from './GerberaFlower';
 import { WashiTape } from './WashiTape';
+import { PwaInstallButton } from './PwaInstallButton';
 
 export const LoginScreen = () => {
   const { login } = useAppContext();
@@ -107,6 +108,10 @@ export const LoginScreen = () => {
             )}
           </button>
         </form>
+
+        <div className="mt-5 pt-3.5 border-t border-slate-200/80 flex items-center justify-center">
+          <PwaInstallButton />
+        </div>
       </div>
     </div>
   );
