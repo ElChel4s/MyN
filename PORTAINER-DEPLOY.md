@@ -17,9 +17,10 @@ Esta guía te explica paso a paso cómo desplegar la **Bitácora de Recuerdos** 
 6. En la sección **Environment variables** (abajo), haz clic en **+ Add environment variable** y añade tus dos variables de Supabase:
    - `NEXT_PUBLIC_SUPABASE_URL`: Tu URL del proyecto de Supabase (ej: `https://xxxx.supabase.co`)
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Tu clave anónima (anon public key) de Supabase
-   - *(Opcional)* `PORT`: `3000` (o el puerto del VPS donde quieras exponerlo, ej: `8080`)
+   - *(Opcional)* `HOST_PORT`: `3005` (o cualquier puerto libre en tu VPS como `3001`, `8080`, `4000`. Por defecto es `3005` para evitar conflictos con el 3000)
 7. Haz clic en **Deploy the stack**.
    - Portainer clonará el repositorio, construirá la imagen optimizada con Alpine y levantará el contenedor automáticamente.
+   - Podrás acceder desde tu navegador en `http://IP_DE_TU_VPS:3005` (o el puerto que hayas configurado).
 
 ---
 
