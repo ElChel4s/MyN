@@ -13,8 +13,11 @@ import {
   createOngoingDateInDB,
   saveOngoingDateToBitacoraInDB,
   deleteMemoryFromDB,
-  loginCoupleUser
+  loginCoupleUser,
+  addPhotoToOngoingDateInDB,
+  deletePhotoFromDB
 } from '../lib/dataService';
+import { uploadPolaroid } from '../lib/uploadPhoto';
 
 interface AppContextProps {
   activeTab: string;
@@ -86,6 +89,8 @@ interface AppContextProps {
   savePlan: (plan: PlanItem) => Promise<void>;
   deletePlan: (planId: string) => Promise<void>;
   deleteMemory: (memoryId: string) => Promise<void>;
+  uploadAndAddPhotoToOngoing: (file: File, caption?: string, secret?: string) => Promise<DatePhoto | null>;
+  deletePhotoFromOngoing: (photoId: string) => Promise<void>;
   openQuickPlan: () => void;
   isLoadingDB: boolean;
   refreshFromSupabase: () => Promise<void>;
@@ -415,6 +420,50 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const uploadAndAddPhotoToOngoing = async (
+    file: File,
+    caption?: string,
+    secret?: string
+  ): Promise<DatePhoto | null> => {
+    if (!activeOngoingDate || !file) return null;
+
+    try {
+      showToast('Comprimiendo foto para la bitácora...');
+      const publicUrl = await uploadPolaroid(file, activeOngoingDate.id);
+
+      const newPhoto = await addPhotoToOngoingDateInDB(
+        activeOngoingDate.id,
+        publicUrl,
+        caption || activeOngoingDate.title,
+        secret || 'Momento especial capturado durante la cita.',
+        currentUserSlot,
+        activeOngoingDate.photos.length
+      );
+
+      setActiveOngoingDate({
+        ...activeOngoingDate,
+        photos: [...activeOngoingDate.photos, newPhoto]
+      });
+
+      showToast('¡Foto comprimida y guardada en la cita! 📸');
+      return newPhoto;
+    } catch (err: any) {
+      console.error('Error al subir foto:', err);
+      showToast('Error al subir foto: ' + (err.message || 'Intenta de nuevo'));
+      return null;
+    }
+  };
+
+  const deletePhotoFromOngoing = async (photoId: string) => {
+    if (!activeOngoingDate) return;
+    await deletePhotoFromDB(photoId);
+    setActiveOngoingDate({
+      ...activeOngoingDate,
+      photos: activeOngoingDate.photos.filter((p) => p.id !== photoId)
+    });
+    showToast('Foto eliminada de la cita');
+  };
+
   const openQuickPlan = () => {
     setEditingWish({
       id: `wish-${Date.now()}`,
@@ -506,6 +555,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     savePlan,
     deletePlan,
     deleteMemory,
+    uploadAndAddPhotoToOngoing,
+    deletePhotoFromOngoing,
     openQuickPlan,
     isLoadingDB,
     refreshFromSupabase

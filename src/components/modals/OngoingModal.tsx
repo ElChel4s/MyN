@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, MapPin, Calendar, Camera, Trash2, Plus, Smile, PenTool, MessageSquareHeart, Eye, EyeOff, Heart, Quote, Check, Minimize2, Upload, Loader2 } from 'lucide-react';
+import { X, MapPin, Calendar, Camera, Trash2, Plus, Smile, PenTool, MessageSquareHeart, Eye, EyeOff, Heart, Quote, Check, Minimize2, Upload, Loader2, Image as ImageIcon } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { GerberaFlower } from '../ui/GerberaFlower';
 import { DateMemory, DatePhoto } from '../../lib/types';
-import { uploadPolaroid } from '../../lib/uploadPhoto';
 
 export const OngoingModal = () => {
   const {
@@ -22,12 +21,14 @@ export const OngoingModal = () => {
     wishlist,
     setWishlist,
     setActiveTab,
-    saveOngoingDateToBitacora
+    saveOngoingDateToBitacora,
+    uploadAndAddPhotoToOngoing,
+    deletePhotoFromOngoing
   } = useAppContext();
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const [newPhotoUrl, setNewPhotoUrl] = useState('');
   const [newPhotoCaption, setNewPhotoCaption] = useState('');
@@ -62,34 +63,15 @@ export const OngoingModal = () => {
 
     try {
       setIsUploadingPhoto(true);
-      showToast('Comprimiendo foto a formato Polaroid...');
-      const publicUrl = await uploadPolaroid(file, activeOngoingDate.id, (prog) => {
-        setUploadProgress(Math.round(prog));
-      });
-
-      const newPhotoObj: DatePhoto = {
-        id: `p-${Date.now()}`,
-        date_id: activeOngoingDate.id,
-        url: publicUrl,
-        caption: newPhotoCaption.trim() || activeOngoingDate.title,
-        secret_back: newPhotoSecret.trim() || 'Momento especial capturado juntos.',
-        rotation: activeOngoingDate.photos.length % 2 === 0 ? '-2deg' : '2deg'
-      };
-
-      setActiveOngoingDate({
-        ...activeOngoingDate,
-        photos: [...activeOngoingDate.photos, newPhotoObj]
-      });
+      await uploadAndAddPhotoToOngoing(file, newPhotoCaption, newPhotoSecret);
       setNewPhotoCaption('');
       setNewPhotoSecret('');
-      showToast('¡Foto comprimida y subida a Supabase con éxito!');
     } catch (err: any) {
       console.error('Error al subir foto:', err);
-      showToast('Error al subir foto: ' + (err.message || 'reintenta'));
     } finally {
       setIsUploadingPhoto(false);
-      setUploadProgress(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (cameraInputRef.current) cameraInputRef.current.value = '';
+      if (galleryInputRef.current) galleryInputRef.current.value = '';
     }
   };
 
@@ -120,11 +102,8 @@ export const OngoingModal = () => {
     showToast('Foto Polaroid añadida');
   };
 
-  const handleRemovePhotoFromOngoing = (photoId: string) => {
-    setActiveOngoingDate({
-      ...activeOngoingDate,
-      photos: activeOngoingDate.photos.filter((p) => p.id !== photoId)
-    });
+  const handleRemovePhotoFromOngoing = async (photoId: string) => {
+    await deletePhotoFromOngoing(photoId);
   };
 
   const handleSaveOngoingToBitacora = async (e: React.FormEvent) => {
@@ -285,31 +264,62 @@ export const OngoingModal = () => {
 
             {/* Controles para añadir Polaroid con compresión automática */}
             <div className="bg-purple-50/70 p-3.5 rounded-2xl border-2 border-dashed border-purple-300 space-y-3">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileSelected}
-                  className="hidden"
-                />
-                
+              {/* Inputs ocultos: cámara directa para celulares y selector de archivos/galería */}
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleFileSelected}
+                className="hidden"
+              />
+              <input
+                ref={galleryInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelected}
+                className="hidden"
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* Botón 1: Tomar foto directa con la cámara */}
                 <button
                   type="button"
                   disabled={isUploadingPhoto}
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-teal-600 to-purple-600 hover:from-teal-700 hover:to-purple-700 text-white font-sketch text-base rounded-xl border-2 border-purple-950 shadow-sm transition-all hover:scale-[1.01] active:scale-98 cursor-pointer disabled:opacity-60"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-sketch text-base rounded-xl border-2 border-slate-900 shadow-sm transition-all hover:scale-[1.01] active:scale-98 cursor-pointer disabled:opacity-60"
+                  title="Abre la cámara del teléfono o dispositivo para sacar una foto en el momento"
                 >
                   {isUploadingPhoto ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin text-teal-200" />
-                      <span>Comprimiendo y subiendo Polaroid... {uploadProgress ? `${uploadProgress}%` : ''}</span>
+                      <Loader2 className="w-5 h-5 animate-spin text-teal-200" />
+                      <span>Comprimiendo foto...</span>
                     </>
                   ) : (
                     <>
-                      <Camera className="w-4 h-4 text-teal-200" />
-                      <span>Elegir Foto o Tomar con Cámara (WebP automático)</span>
-                      <Upload className="w-3.5 h-3.5 text-purple-200" />
+                      <Camera className="w-5 h-5 text-teal-200" />
+                      <span className="font-bold">Sacar Foto con Cámara</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Botón 2: Subir foto desde la galería o archivos */}
+                <button
+                  type="button"
+                  disabled={isUploadingPhoto}
+                  onClick={() => galleryInputRef.current?.click()}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-sketch text-base rounded-xl border-2 border-slate-900 shadow-sm transition-all hover:scale-[1.01] active:scale-98 cursor-pointer disabled:opacity-60"
+                  title="Elige una foto guardada en tu galería o fotos del teléfono"
+                >
+                  {isUploadingPhoto ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin text-purple-200" />
+                      <span>Comprimiendo foto...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon className="w-5 h-5 text-purple-200" />
+                      <span className="font-bold">Subir de la Galería</span>
                     </>
                   )}
                 </button>

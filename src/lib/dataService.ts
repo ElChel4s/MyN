@@ -464,3 +464,69 @@ export async function deleteMemoryFromDB(dateId: string): Promise<boolean> {
     return false;
   }
 }
+
+export async function addPhotoToOngoingDateInDB(
+  dateId: string,
+  photoUrl: string,
+  caption: string = '',
+  secretBack: string = '',
+  slot: number = 1,
+  orderIndex: number = 0
+): Promise<DatePhoto> {
+  const isExistingUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(dateId);
+  const rotation = orderIndex % 2 === 0 ? '-2deg' : '2deg';
+
+  if (isExistingUUID) {
+    try {
+      const { data, error } = await supabase
+        .from('date_photos')
+        .insert({
+          date_id: dateId,
+          photo_url: photoUrl,
+          caption: caption.trim(),
+          secret_back: secretBack.trim(),
+          rotation,
+          order_index: orderIndex,
+          uploaded_by_slot: slot
+        })
+        .select()
+        .single();
+
+      if (!error && data) {
+        return {
+          id: data.id,
+          date_id: dateId,
+          url: data.photo_url,
+          caption: data.caption,
+          secret_back: data.secret_back,
+          rotation: data.rotation
+        };
+      }
+    } catch (err) {
+      console.warn('Advertencia al insertar foto en Supabase:', err);
+    }
+  }
+
+  return {
+    id: `p-${Date.now()}`,
+    date_id: dateId,
+    url: photoUrl,
+    caption: caption.trim(),
+    secret_back: secretBack.trim(),
+    rotation
+  };
+}
+
+export async function deletePhotoFromDB(photoId: string): Promise<boolean> {
+  const isExistingUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(photoId);
+  if (!isExistingUUID) return true;
+  try {
+    const { error } = await supabase.from('date_photos').delete().eq('id', photoId);
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Error al borrar foto en Supabase:', err);
+    return false;
+  }
+}
+
