@@ -291,11 +291,21 @@ export async function createOngoingDateInDB(
     payload.origin_plan_id = date.fromWishId;
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('dates')
     .insert(payload)
     .select('*, date_photos(*)')
     .single();
+
+  // Si falló por columna no encontrada antes de ejecutar la migración (código PGRST204)
+  if (error && error.code === 'PGRST204') {
+    console.warn('Reintentando insert de cita omitiendo columnas extras:', error.message);
+    delete payload.created_by_slot;
+    delete payload.gerbera_color;
+    const retry = await supabase.from('dates').insert(payload).select('*, date_photos(*)').single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) {
     console.error('Error al crear cita en curso en Supabase:', error);

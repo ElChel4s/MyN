@@ -241,21 +241,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const plans = await fetchPlansFromDB();
         setWishlist(plans);
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'dates' }, async () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'dates' }, async (payload) => {
+        console.log('Realtime event on dates:', payload.eventType);
+        const { memories, activeOngoing } = await fetchDatesFromDB();
+        setMemories(memories);
+        setActiveOngoingDate(activeOngoing || null);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'date_photos' }, async (payload) => {
+        console.log('Realtime event on date_photos:', payload.eventType);
         const { memories, activeOngoing } = await fetchDatesFromDB();
         setMemories(memories);
         if (activeOngoing) {
           setActiveOngoingDate(activeOngoing);
         }
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'date_photos' }, async () => {
-        const { memories, activeOngoing } = await fetchDatesFromDB();
-        setMemories(memories);
-        if (activeOngoing) {
-          setActiveOngoingDate(activeOngoing);
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('🟢 Supabase Realtime (WebSockets) conectado exitosamente');
         }
-      })
-      .subscribe();
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -330,9 +334,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       );
       setActiveOngoingDate(newOngoing);
       setIsLiveDateModalOpen(true);
-      showToast(`¡Cita "${plan.title}" iniciada!`);
-    } catch (err) {
+      showToast(`¡Cita "${plan.title}" iniciada y sincronizada en vivo! 🌸`);
+    } catch (err: any) {
       console.error('Error al iniciar cita desde plan en Supabase:', err);
+      showToast('Aviso: Error en Supabase (' + (err?.message || 'verifica SQL') + '). Modo local temporal.');
       // Fallback local
       setActiveOngoingDate({
         id: `mem-${Date.now()}`,
@@ -366,9 +371,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       );
       setActiveOngoingDate(newOngoing);
       setIsLiveDateModalOpen(true);
-      showToast('¡Cita iniciada! Activado botón flotante.');
-    } catch (err) {
+      showToast('¡Cita iniciada y sincronizada en vivo! 🌸');
+    } catch (err: any) {
       console.error('Error al crear cita rápida en Supabase:', err);
+      showToast('Aviso: Error en Supabase (' + (err?.message || 'ejecuta supabase_migration.sql') + '). Modo local temporal.');
       // Fallback local
       const dateNum = memories.length + 1;
       const formattedNum = String(dateNum).padStart(3, '0');
