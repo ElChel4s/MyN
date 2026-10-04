@@ -35,10 +35,16 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
       </div>
 
       <div
-        onClick={() => onToggleFlip(photo.id)}
+        onClick={() => {
+          if (photo.secret_back?.trim()) {
+            onToggleFlip(photo.id);
+          } else {
+            onZoom(photo);
+          }
+        }}
         className="bg-white p-2.5 pb-4 border-2 border-slate-800 shadow-[4px_6px_0px_0px_rgba(88,28,135,0.22)] cursor-pointer transition-transform duration-300 hover:scale-[1.02]"
       >
-        {!isFlipped ? (
+        {!isFlipped || !photo.secret_back?.trim() ? (
           <>
             <div className="relative aspect-square w-full overflow-hidden bg-slate-100 border border-slate-300">
               <img
@@ -57,10 +63,12 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
               >
                 <ZoomIn className="w-3.5 h-3.5" />
               </button>
-              <span className="absolute top-2 right-2 bg-black/65 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm flex items-center gap-1">
-                <RotateCw className="w-2.5 h-2.5" />
-                Reverso
-              </span>
+              {photo.secret_back?.trim() && (
+                <span className="absolute top-2 right-2 bg-black/65 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm flex items-center gap-1">
+                  <RotateCw className="w-2.5 h-2.5" />
+                  Reverso
+                </span>
+              )}
             </div>
             <p className="font-hand text-lg sm:text-xl text-slate-900 text-center mt-2.5 leading-snug">
               {photo.caption}

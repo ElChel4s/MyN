@@ -108,20 +108,25 @@ export const MemoryDetailModal = () => {
             </div>
 
             <div className="space-y-4">
-              <div className="bg-white/95 border-2 border-teal-600 sketch-box p-4 relative">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-teal-900 mb-2">
-                  <Heart className="w-4 h-4 text-teal-600 fill-teal-100" /> 
-                  <span>De {user1Alias} para {user2Alias}</span>
-                </div>
-                <p className="font-sketch text-base text-slate-800">“{selectedMemory.person1_nice_note}”</p>
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-purple-900 bg-purple-100/80 px-3 py-1 rounded-full border border-purple-300 w-fit">
+                <MessageSquareHeart className="w-3.5 h-3.5 text-purple-700" />
+                <span>Notas secretas reveladas de la cita</span>
               </div>
 
-              <div className="bg-white/95 border-2 border-purple-600 sketch-box-alt p-4 relative">
+              <div className="bg-white/95 border-2 border-teal-600 sketch-box p-4 relative shadow-xs">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-teal-900 mb-2">
+                  <Heart className="w-4 h-4 text-teal-600 fill-teal-100" /> 
+                  <span>Lo que {user1Alias} escribió para {user2Alias}:</span>
+                </div>
+                <p className="font-sketch text-base text-slate-800 italic">“{selectedMemory.person1_nice_note || 'Un recuerdo lleno de cariño.'}”</p>
+              </div>
+
+              <div className="bg-white/95 border-2 border-purple-600 sketch-box-alt p-4 relative shadow-xs">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-purple-900 mb-2">
                   <Heart className="w-4 h-4 text-purple-600 fill-purple-100" /> 
-                  <span>De {user2Alias} para {user1Alias}</span>
+                  <span>Lo que {user2Alias} escribió para {user1Alias}:</span>
                 </div>
-                <p className="font-sketch text-base text-slate-800">“{selectedMemory.person2_nice_note}”</p>
+                <p className="font-sketch text-base text-slate-800 italic">“{selectedMemory.person2_nice_note || 'Un recuerdo lleno de cariño.'}”</p>
               </div>
 
               <div className="bg-gradient-to-br from-purple-100 to-teal-50 border-2 border-slate-800 sketch-box p-4 shadow-sm">

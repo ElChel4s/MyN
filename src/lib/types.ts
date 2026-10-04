@@ -44,6 +44,7 @@ export interface DateMemory {
   scheduled_date: string;
   gerbera_color: string;
   stamp_code?: string;
+  quote_turn_slot?: 1 | 2;
   random_quote: string;
   person1_liked: string;
   person2_liked: string;
