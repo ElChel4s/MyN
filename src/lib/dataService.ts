@@ -450,6 +450,24 @@ export async function saveOngoingDateToBitacoraInDB(
     }
   }
 
+  // Si es una cita existente, eliminar de date_photos las fotos que hayan sido borradas
+  if (isExistingUUID && savedPhotos.length > 0) {
+    const validSavedUUIDs = savedPhotos
+      .map((p) => p.id)
+      .filter((id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id));
+    if (validSavedUUIDs.length > 0) {
+      try {
+        await supabase
+          .from('date_photos')
+          .delete()
+          .eq('date_id', targetId)
+          .not('id', 'in', `(${validSavedUUIDs.join(',')})`);
+      } catch (cleanErr) {
+        console.warn('Advertencia al limpiar fotos eliminadas en DB:', cleanErr);
+      }
+    }
+  }
+
   // Si provenía de un plan, eliminarlo de la lista de pendientes
   if (completedEntry.fromWishId) {
     await supabase.from('plans').delete().eq('id', completedEntry.fromWishId);
@@ -539,4 +557,21 @@ export async function deletePhotoFromDB(photoId: string): Promise<boolean> {
     return false;
   }
 }
+
+export async function updatePhotoCaptionInDB(photoId: string, caption: string): Promise<boolean> {
+  const isExistingUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(photoId);
+  if (!isExistingUUID) return true;
+  try {
+    const { error } = await supabase
+      .from('date_photos')
+      .update({ caption: caption.trim() })
+      .eq('id', photoId);
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Error al actualizar pie de foto en Supabase:', err);
+    return false;
+  }
+}
+
 

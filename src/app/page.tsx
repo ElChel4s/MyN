@@ -17,6 +17,7 @@ import { QuickCreateModal } from '@/components/modals/QuickCreateModal';
 import { ZoomModal } from '@/components/modals/ZoomModal';
 import { MemoryDetailModal } from '@/components/modals/MemoryDetailModal';
 import { EditNicknamesModal } from '@/components/modals/EditNicknamesModal';
+import { EditDateScreen } from '@/components/screens/EditDateScreen';
 import { useAppContext } from '@/context/AppContext';
 import { GerberaFlower } from '@/components/ui/GerberaFlower';
 import { PenTool } from 'lucide-react';
@@ -35,7 +36,8 @@ export default function BitacoraApp() {
     openQuickPlan,
     startNewQuickDate,
     setQuickCreateMode,
-    setIsQuickCreateOpen
+    setIsQuickCreateOpen,
+    editingMemory
   } = useAppContext();
 
   const [mounted, setMounted] = useState(false);
@@ -146,15 +148,21 @@ export default function BitacoraApp() {
           </div>
         </header>
 
-        <Navbar />
+        {editingMemory ? (
+          <EditDateScreen />
+        ) : (
+          <>
+            <Navbar />
 
-        <div className="min-h-[60vh]">
-          {activeTab === 'inicio' && <TabDashboard />}
-          {activeTab === 'citas' && <TabPlans />}
-          {activeTab === 'historial' && <TabHistory />}
-          {activeTab === 'bitacora' && <TabScrapbook />}
-          {activeTab === 'perfil' && <TabProfile />}
-        </div>
+            <div className="min-h-[60vh]">
+              {activeTab === 'inicio' && <TabDashboard />}
+              {activeTab === 'citas' && <TabPlans />}
+              {activeTab === 'historial' && <TabHistory />}
+              {activeTab === 'bitacora' && <TabScrapbook />}
+              {activeTab === 'perfil' && <TabProfile />}
+            </div>
+          </>
+        )}
       </main>
 
       <FloatingOngoing />

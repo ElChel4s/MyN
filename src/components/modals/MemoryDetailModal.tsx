@@ -14,8 +14,7 @@ export const MemoryDetailModal = () => {
     user1Alias,
     user2Alias,
     currentUserSlot,
-    setIsLiveDateModalOpen,
-    setActiveOngoingDate
+    setEditingMemory
   } = useAppContext();
 
   if (!selectedMemory) return null;
@@ -25,8 +24,7 @@ export const MemoryDetailModal = () => {
   };
 
   const handleEditMemory = () => {
-    setActiveOngoingDate({ ...selectedMemory, isEditingExistingMemory: true });
-    setIsLiveDateModalOpen(true);
+    setEditingMemory(selectedMemory);
     setSelectedMemory(null);
   };
 

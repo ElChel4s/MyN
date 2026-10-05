@@ -15,7 +15,8 @@ import {
   deleteMemoryFromDB,
   loginCoupleUser,
   addPhotoToOngoingDateInDB,
-  deletePhotoFromDB
+  deletePhotoFromDB,
+  updatePhotoCaptionInDB
 } from '../lib/dataService';
 import { uploadPolaroid } from '../lib/uploadPhoto';
 
@@ -65,6 +66,11 @@ interface AppContextProps {
   setRandomPlanIndex: React.Dispatch<React.SetStateAction<number>>;
   selectedMemory: DateMemory | null;
   setSelectedMemory: (val: DateMemory | null) => void;
+  editingMemory: DateMemory | null;
+  setEditingMemory: (val: DateMemory | null) => void;
+  saveEditedDateMemory: (updatedMemory: DateMemory) => Promise<void>;
+  updatePhotoCaption: (photoId: string, newCaption: string) => Promise<void>;
+  addPhotoToExistingDate: (dateId: string, file: File, caption?: string) => Promise<DatePhoto | null>;
   zoomedPhoto: DatePhoto | null;
   setZoomedPhoto: (val: DatePhoto | null) => void;
   flippedPolaroids: Record<string, boolean>;
@@ -167,6 +173,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [randomPlanIndex, setRandomPlanIndex] = useState(0);
 
   const [selectedMemory, setSelectedMemory] = useState<DateMemory | null>(null);
+  const [editingMemory, setEditingMemory] = useState<DateMemory | null>(null);
   const [zoomedPhoto, setZoomedPhoto] = useState<DatePhoto | null>(null);
   const [flippedPolaroids, setFlippedPolaroids] = useState<Record<string, boolean>>({});
   const [editingWish, setEditingWish] = useState<PlanItem | null>(null);
@@ -470,6 +477,81 @@ export function AppProvider({ children }: { children: ReactNode }) {
     showToast('Foto eliminada de la cita');
   };
 
+  const updatePhotoCaption = async (photoId: string, newCaption: string) => {
+    const trimmed = newCaption.trim();
+    if (activeOngoingDate) {
+      setActiveOngoingDate((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          photos: prev.photos.map((p) => (p.id === photoId ? { ...p, caption: trimmed } : p))
+        };
+      });
+    }
+
+    if (editingMemory) {
+      setEditingMemory((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          photos: prev.photos.map((p) => (p.id === photoId ? { ...p, caption: trimmed } : p))
+        };
+      });
+    }
+
+    setMemories((prev) =>
+      prev.map((m) => ({
+        ...m,
+        photos: m.photos.map((p) => (p.id === photoId ? { ...p, caption: trimmed } : p))
+      }))
+    );
+
+    await updatePhotoCaptionInDB(photoId, trimmed);
+    showToast('Pie de foto actualizado');
+  };
+
+  const addPhotoToExistingDate = async (
+    dateId: string,
+    file: File,
+    caption?: string
+  ): Promise<DatePhoto | null> => {
+    try {
+      showToast('Comprimiendo foto para la bitácora...');
+      const publicUrl = await uploadPolaroid(file, dateId);
+      const newPhoto = await addPhotoToOngoingDateInDB(
+        dateId,
+        publicUrl,
+        caption || 'Momento especial',
+        '',
+        currentUserSlot,
+        99
+      );
+      showToast('¡Foto subida y comprimida con éxito! 📸');
+      return newPhoto;
+    } catch (err: any) {
+      console.error('Error al subir foto:', err);
+      showToast('Error al subir foto: ' + (err.message || 'Intenta de nuevo'));
+      return null;
+    }
+  };
+
+  const saveEditedDateMemory = async (updatedMemory: DateMemory) => {
+    try {
+      showToast('Guardando cambios en la cita...');
+      const saved = await saveOngoingDateToBitacoraInDB(updatedMemory, currentUserSlot);
+      setMemories((prev) => prev.map((m) => (m.id === saved.id ? saved : m)));
+      setEditingMemory(null);
+      setActiveTab('bitacora');
+      showToast('¡Cita actualizada con éxito en la bitácora! ✨');
+    } catch (err: any) {
+      console.error('Error al guardar cita editada:', err);
+      setMemories((prev) => prev.map((m) => (m.id === updatedMemory.id ? updatedMemory : m)));
+      setEditingMemory(null);
+      setActiveTab('bitacora');
+      showToast('Cambios guardados localmente');
+    }
+  };
+
   const openQuickPlan = () => {
     setEditingWish({
       id: `wish-${Date.now()}`,
@@ -544,6 +626,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     randomPhotoSeed, setRandomPhotoSeed,
     randomPlanIndex, setRandomPlanIndex,
     selectedMemory, setSelectedMemory,
+    editingMemory, setEditingMemory,
+    saveEditedDateMemory,
+    updatePhotoCaption,
+    addPhotoToExistingDate,
     zoomedPhoto, setZoomedPhoto,
     flippedPolaroids, setFlippedPolaroids,
     editingWish, setEditingWish,

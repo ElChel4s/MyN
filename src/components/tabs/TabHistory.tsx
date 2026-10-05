@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
-import { Search, Calendar, MapPin, Quote, Eye } from 'lucide-react';
+import { Search, Calendar, MapPin, Quote, Eye, Edit3 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { GerberaFlower } from '../ui/GerberaFlower';
 import { WashiTape } from '../ui/WashiTape';
 
 export const TabHistory = () => {
-  const { memories, searchQuery, setSearchQuery, setSelectedMemory } = useAppContext();
+  const { memories, searchQuery, setSearchQuery, setSelectedMemory, setEditingMemory } = useAppContext();
 
   const filteredMemories = useMemo(() => {
     return memories.filter((m) => {
@@ -93,9 +93,22 @@ export const TabHistory = () => {
 
               <div className="pt-3 border-t border-dashed border-teal-400 flex items-center justify-between">
                 <span className="text-xs font-sketch text-slate-600">{mem.photos.length} polaroids • Notas y dedicatorias</span>
-                <span className="inline-flex items-center gap-1 text-xs font-bold text-purple-800 group-hover:translate-x-1 transition-transform">
-                  <Eye className="w-3.5 h-3.5" /> Ver cita completa
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingMemory(mem);
+                    }}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-teal-800 hover:text-teal-950 bg-teal-100/80 hover:bg-teal-200 px-2.5 py-1 rounded-lg border border-teal-300 transition-all cursor-pointer"
+                    title="Editar recuerdos o fotos de esta cita"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" /> Editar
+                  </button>
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-purple-800 group-hover:translate-x-1 transition-transform cursor-pointer">
+                    <Eye className="w-3.5 h-3.5" /> Ver cita completa
+                  </span>
+                </div>
               </div>
             </div>
           ))}
