@@ -23,7 +23,6 @@ import {
   Save
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
-import { GerberaFlower } from '../ui/GerberaFlower';
 import { DateMemory, DatePhoto } from '../../lib/types';
 import { uploadPolaroid } from '../../lib/uploadPhoto';
 
@@ -279,28 +278,6 @@ export const EditDateScreen = () => {
                 className="w-full px-3.5 py-2 bg-white border-2 border-teal-300 rounded-xl font-sketch text-base focus:border-teal-600 focus:outline-none shadow-xs"
               />
             </div>
-          </div>
-
-          {/* Color de la gerbera */}
-          <div className="pt-2 border-t border-purple-100 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-sketch font-bold text-slate-700">
-              Color de la Gerbera del recuerdo:
-            </span>
-            {(['purple', 'teal', 'aqua', 'lavender', 'mixed'] as const).map((color) => (
-              <button
-                key={color}
-                type="button"
-                onClick={() => setForm({ ...form, gerbera_color: color })}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-xl border-2 text-xs font-sketch font-bold transition-all cursor-pointer ${
-                  form.gerbera_color === color
-                    ? 'border-purple-900 bg-purple-100 shadow-sm scale-105'
-                    : 'border-slate-300 bg-white hover:bg-slate-50'
-                }`}
-              >
-                <GerberaFlower size={20} variant={color as any} />
-                <span className="capitalize">{color}</span>
-              </button>
-            ))}
           </div>
         </div>
 
